@@ -44,8 +44,10 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
             document.addEventListener("DOMContentLoaded", function () {
                 var optgroupMetadata = <?=json_encode($optgroupFields)?>;
                 if (!optgroupMetadata) return;
-                if (<?=$this->getJavascriptModuleObjectName()?>.isMlmActive()) {
-                    <?=$this->getJavascriptModuleObjectName()?>.afterRender(function() {
+                var JSMO = <?=$this->getJavascriptModuleObjectName()?>;
+                var mlmActive = JSMO.isMlmActive();
+                if (mlmActive) {
+                    JSMO.afterRender(function() {
                         // Need to update optgroup label
                         document.querySelectorAll("[mlm-optgroup-label]").forEach(function(option) {
                             var optgroup = option.parentNode;
@@ -73,11 +75,13 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
                         if (groupValues.includes(option.value)) {
                             currentOptGroup = document.createElement("optgroup");
                             currentOptGroup.label = option.textContent.trim();
-                            // Hide the original option but add it so that MLM can translate it, and add a marker
-                            option.style.display = "none";
-                            option.setAttribute("mlm-optgroup-label", "1");
-                            option.setAttribute("disabled", "disabled");
-                            currentOptGroup.appendChild(option);
+                            if (mlmActive) {
+                                // Hide the original option but add it so that MLM can translate it, and add a marker
+                                option.style.display = "none";
+                                option.setAttribute("mlm-optgroup-label", "1");
+                                option.setAttribute("disabled", "disabled");
+                                currentOptGroup.appendChild(option);
+                            }
                             fragment.appendChild(currentOptGroup);
                             return;
                         }
