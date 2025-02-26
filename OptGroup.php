@@ -32,20 +32,29 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
         $annotatedFields = $this->getTags($tag, $fields=NULL, $instruments=$instrument);
 
         // Populate an array of fields and any titles
-        $alertFields = [];
         if (!empty($annotatedFields[$tag]) && is_array($annotatedFields[$tag])) {
             foreach (array_keys($annotatedFields[$tag]) as $fieldName) {
                 $optgroupFields[$fieldName] = explode(",", trim($annotatedFields[$tag][$fieldName][0], "'\""));
             };
         };
-        echo "<script>window.OptgroupMetadata = " . json_encode($optgroupFields) . ";</script>";
-        echo "<script>
-            document.addEventListener(\"DOMContentLoaded\", function () {
-                var optgroupMetadata = " . json_encode($optgroupFields) . ";
-                if (!optgroupMetadata) return;
+        $this->initializeJavascriptModuleObject();
 
+        ?>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                var optgroupMetadata = <?=json_encode($optgroupFields)?>;
+                if (!optgroupMetadata) return;
+                if (<?=$this->getJavascriptModuleObjectName()?>.isMlmActive()) {
+                    <?=$this->getJavascriptModuleObjectName()?>.afterRender(function() {
+                        // Need to update optgroup label
+                        document.querySelectorAll("[mlm-optgroup-label]").forEach(function(option) {
+                            var optgroup = option.parentNode;
+                            optgroup.label = option.textContent.trim();
+                        });
+                    });
+                }
                 Object.keys(optgroupMetadata).forEach(function(fieldName) {
-                    var select = document.querySelector(\"select[name='\" + fieldName + \"']\");
+                    var select = document.querySelector("select[name='" + fieldName + "']");
                     if (!select) return; // Skip if no matching select found
 
                     var groupValues = optgroupMetadata[fieldName];
@@ -53,27 +62,35 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
                     var fragment = document.createDocumentFragment();
                     var currentOptGroup = null;
                     var foundValues = new Set(options.map(option => option.value));
+                    var selectedValue = select.value;
 
                     groupValues.forEach(function(groupValue) {
                         if (!foundValues.has(groupValue)) {
-                            console.warn(\"Optgroup value '\" + groupValue + \"' for field '\" + fieldName + \"' is missing from dropdown choices.\");
-    }
-    });
+                            console.warn("Optgroup value '" + groupValue + "' for field '" + fieldName + "' is missing from dropdown choices.");
+                        }
+                    });
+                    options.forEach(function(option) {
+                        if (groupValues.includes(option.value)) {
+                            currentOptGroup = document.createElement("optgroup");
+                            currentOptGroup.label = option.textContent.trim();
+                            // Hide the original option but add it so that MLM can translate it, and add a marker
+                            option.style.display = "none";
+                            option.setAttribute("mlm-optgroup-label", "1");
+                            option.setAttribute("disabled", "disabled");
+                            currentOptGroup.appendChild(option);
+                            fragment.appendChild(currentOptGroup);
+                            return;
+                        }
+                        (currentOptGroup || fragment).appendChild(option);
+                    });
 
-    options.forEach(function(option) {
-        if (groupValues.includes(option.value)) {
-            currentOptGroup = document.createElement(\"optgroup\");
-            currentOptGroup.label = option.textContent.trim();
-            fragment.appendChild(currentOptGroup);
-            return;
-    }
-    (currentOptGroup || fragment).appendChild(option);
-    });
-
-    select.innerHTML = \"\";
-    select.appendChild(fragment);
-    });
-    });
-    </script>";
+                    select.innerHTML = "";
+                    select.appendChild(fragment);
+                    // Restore selected value
+                    select.value = selectedValue;
+                });
+            });
+        </script>
+        <?php
     }
 }
