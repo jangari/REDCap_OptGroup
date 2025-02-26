@@ -71,6 +71,15 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
                             console.warn("Optgroup value '" + groupValue + "' for field '" + fieldName + "' is missing from dropdown choices.");
                         }
                     });
+                    if (select.classList.contains('rc-autocomplete')) {
+                        // When autocomplete is enabled, the action tag will break down. To preserve the intent, we simply remove all options marked as group labels
+                        options.forEach(function(option) {
+                            if (groupValues.includes(option.value)) {
+                                $(option).remove();
+                            }
+                        });
+                        return; // Done
+                    }
                     options.forEach(function(option) {
                         if (groupValues.includes(option.value)) {
                             currentOptGroup = document.createElement("optgroup");
