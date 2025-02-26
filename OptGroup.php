@@ -74,6 +74,7 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
                     options.forEach(function(option) {
                         if (groupValues.includes(option.value)) {
                             currentOptGroup = document.createElement("optgroup");
+                            currentOptGroup.setAttribute("choice", option.value);
                             currentOptGroup.label = option.textContent.trim();
                             if (mlmActive) {
                                 // Hide the original option but add it so that MLM can translate it, and add a marker
