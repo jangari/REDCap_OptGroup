@@ -31,7 +31,7 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
         $tag = "@OPTGROUP";
         $annotatedFields = $this->getTags($tag, $fields=NULL, $instruments=$instrument);
 
-        // Populate an array of fields and any titles
+        // Populate an array of annotated fields and their annotation parameters
         if (!empty($annotatedFields[$tag]) && is_array($annotatedFields[$tag])) {
             foreach (array_keys($annotatedFields[$tag]) as $fieldName) {
                 $optgroupFields[$fieldName] = explode(",", trim($annotatedFields[$tag][$fieldName][0], "'\""));
