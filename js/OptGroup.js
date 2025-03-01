@@ -13,9 +13,15 @@ var config = {
     fields: {},
     JSMO: null,
     mlmActive: false,
+    isSurvey: false,
     debug: false
 };
 
+/**
+ * Initializes OptGroup
+ * @param {Object} data 
+ * @param {Object} jsmo 
+ */
 function initialize(data, jsmo) {
     // Store config
     config = data;
@@ -27,6 +33,9 @@ function initialize(data, jsmo) {
     document.addEventListener("DOMContentLoaded", render);
 }
 
+/**
+ * Orchestrates rendering
+ */
 function render() {
     config.mlmActive = config.JSMO.isMlmActive();
     if (config.mlmActive) {
@@ -53,6 +62,11 @@ function render() {
     });
 }
 
+/**
+ * Renders dropdown headers (<optgroup>)
+ * @param {HTMLElement} select 
+ * @param {string} fieldName 
+ */
 function render_dropdown(select, fieldName) {
     var groupValues = config.fields[fieldName];
     var options = Array.from(select.options);
@@ -79,6 +93,8 @@ function render_dropdown(select, fieldName) {
         if (groupValues.includes(option.value)) {
             currentOptGroup = document.createElement("optgroup");
             currentOptGroup.setAttribute("choice", option.value);
+            currentOptGroup.classList.add("optgroup-header");
+            currentOptGroup.classList.add("optgroup-dropdown");
             currentOptGroup.label = option.textContent.trim();
             if (config.mlmActive) {
                 // Hide the original option but add it so that MLM can translate it, and add a marker
@@ -99,22 +115,30 @@ function render_dropdown(select, fieldName) {
     select.value = selectedValue;
 }
 
+/**
+ * Renders (enhanced) radio headers
+ * @param {string} fieldName 
+ */
 function render_radio(fieldName) {
     const options = config.fields[fieldName];
     for (const option of options) {
         const radioInput = $("input#opt-" + fieldName + "_" + option);
         radioInput.prop("disabled", true).hide();
-        const radioLabel = $("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum'][data-mlm-value='" + option + "']");
+        const radioLabel = $("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum'][data-mlm-value='" + option + "']").addClass('optgroup-header').addClass('optgroup-radio');
         radioLabel.parent().css({
             'pointer-events': 'none',
             'cursor': 'default',
             'margin-left': '0',
             'text-indent': '0'
         });
+        if (config.isSurvey) {
+            // There might be enhanced radios in surveys
+            const enhLabel = $("label[for='opt-" + fieldName + "_" + option + "']");
+            enhLabel.css({
+                'pointer-events': 'none',
+                'cursor': 'default'
+            }).removeClass('hover').addClass('optgroup-header').addClass('optgroup-enhradio');
+        }
     }
-
-    console.log('Radio: ' + fieldName, options)
 }
-
-
 })();
