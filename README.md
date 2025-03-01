@@ -42,6 +42,26 @@ Note that the `<option>`s are nested inside the `<optgroup>`, and thus inherit t
 
 For radio groups, styling can be applied to the choice labels directly in the choices editor. For LH and RH alignment, `<br>` tags can be inserted before and/or after the label to force wrapping.
 
+### Advanced styling
+
+The class **optgroup-header** is added to the `<label>` elements modified by the `@OPTGROUP` action tag. Depending on the type (radio, enhanced radio, dropdown), the following classes are added additionally: **optgroup-radio**, **optgroup-enhradio**, **optgroup-drowndown**.
+
+These can be used to facilitate styling of the headers. For example, to style enhanced radios, use CSS like this:
+```css
+<style>
+.optgroup-header.optgroup-enhradio {
+  background-color: #9d649d;
+  color: white;
+  font-weight: bold;
+}
+</style>
+```
+This will give something like this on surveys with enhanced radios:
+
+![Enhanced Radio](img/enhanced-header.png)
+
+Note that both classes need to be specified for the CSS to have enough specificity to override REDCap's built-in styling.
+
 
 ## Limitations
 
