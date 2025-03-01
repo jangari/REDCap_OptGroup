@@ -9,13 +9,20 @@ var OptGroupEM = window.INTERSECT_OptGroupEM ?? {
 // @ts-ignore
 window.INTERSECT_OptGroupEM = OptGroupEM;
 
-var config = {};
+var config = {
+    fields: {},
+    JSMO: null,
+    mlmActive: false,
+    debug: false
+};
 
-function initialize(fields, jsmo) {
+function initialize(data, jsmo) {
     // Store config
-    config.fields = fields;
+    config = data;
     config.JSMO = jsmo;
-    config.mlmActive = false;
+    if (config.debug) {
+        console.log('OptGroupEM initialized', config);
+    }
     // Listen for DOMContentLoaded
     document.addEventListener("DOMContentLoaded", render);
 }
@@ -37,7 +44,7 @@ function render() {
             render_dropdown(select, fieldName);
             return;
         }
-        // TODO: Special attention needed for enhanded radios (surveys)
+        // TODO: Special attention needed for enhanced radios (surveys)
         var radioLabel = document.querySelector("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum']");
         if (radioLabel) {
             render_radio(fieldName);
@@ -93,7 +100,20 @@ function render_dropdown(select, fieldName) {
 }
 
 function render_radio(fieldName) {
-    console.log('Radio: ' + fieldName)
+    const options = config.fields[fieldName];
+    for (const option of options) {
+        const radioInput = $("input#opt-" + fieldName + "_" + option);
+        radioInput.prop("disabled", true).hide();
+        const radioLabel = $("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum'][data-mlm-value='" + option + "']");
+        radioLabel.parent().css({
+            'pointer-events': 'none',
+            'cursor': 'default',
+            'margin-left': '0',
+            'text-indent': '0'
+        });
+    }
+
+    console.log('Radio: ' + fieldName, options)
 }
 
 

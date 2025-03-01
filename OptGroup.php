@@ -60,8 +60,14 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
         // We need the JSMO for MLM integration
         $this->initializeJavascriptModuleObject();
         $jsmo = $this->getJavascriptModuleObjectName();
-
+        $config = [
+            'fields' => $annotatedFields,
+            'JSMO' => null,
+            'debug' => $this->getProjectSetting('debug') == true,
+            'mlmActive' => false,
+            'isSurvey' => $is_survey,
+        ];
         // Initialize the OptGroup
-        print \RCView::script("window.INTERSECT_OptGroupEM.init(" . json_encode($annotatedFields) . ", $jsmo);");
+        print \RCView::script("window.INTERSECT_OptGroupEM.init(" . json_encode($config) . ", $jsmo);");
     }
 }
