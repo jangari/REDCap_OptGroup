@@ -15,6 +15,13 @@
                 "institution": "Marien Hospital Herne - Klinikum der Ruhr-Universität Bochum"
             }
 		],
+		"project-settings": [
+			{
+				"key": "debug",
+				"name": "Enable Debug Mode",
+				"type": "checkbox"
+			}
+		],
 		"action-tags": [
 			{
 				"tag": "@OPTGROUP", 
