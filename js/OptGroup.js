@@ -37,6 +37,7 @@ function render() {
             render_dropdown(select, fieldName);
             return;
         }
+        // TODO: Special attention needed for enhanded radios (surveys)
         var radioLabel = document.querySelector("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum']");
         if (radioLabel) {
             render_radio(fieldName);
