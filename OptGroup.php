@@ -1,110 +1,73 @@
 <?php namespace INTERSECT\OptGroup;
 
-use \REDCap as REDCap;
-use \Project as Project;
-use ExternalModules\AbstractExternalModule;
+use Exception;
 
 class OptGroup extends \ExternalModules\AbstractExternalModule {
 
-    function getTags($tags, $fields, $instruments) {
+    const OPTGROUP_AT = '@OPTGROUP';
+
+    /**
+     * Gets the fields annotated with the action tag, with the choices designated as headers
+     * @param string $tag 
+     * @param string $instrument 
+     * @return array<string, string[]>
+     * @throws Exception 
+     */
+    function getAnnotatedFields($tag, $instrument) {
         // Thanks to Andy Martin
         // See https://community.projectredcap.org/questions/32001/custom-action-tags-or-module-parameters.html
-        if (!class_exists('INTERSECT\OptGroup\ActionTagHelper')) include_once('classes/ActionTagHelper.php');
-        $action_tag_results = ActionTagHelper::getActionTags($tags, $fields, $instruments);
-        return $action_tag_results;
+        if (!class_exists('INTERSECT\OptGroup\ActionTagHelper')) require_once('classes/ActionTagHelper.php');
+        $tags = ActionTagHelper::getActionTags([$tag], null, [$instrument]);
+        $annotatedFields = [];
+        if (isset($tags[$tag]) && is_array($tags[$tag])) {
+            // Parse the comma separated list of fields
+            foreach (array_keys($tags[$tag]) as $fieldName) {
+                $param = $tags[$tag][$fieldName][0];
+                $quote = substr($param, 0, 1);
+                $choices = array_map('trim', explode(",", trim($param, $quote)));
+                if (count($choices) > 0) {
+                    $annotatedFields[$fieldName] = $choices;
+                }
+            }
+        }
+        return $annotatedFields;
     }
 
     function redcap_survey_page($project_id, $record, $instrument) {
-        $this -> render_optgroup($instrument);
+        $this -> render_optgroup($instrument, true);
     }
 
     function redcap_data_entry_form($project_id, $record, $instrument) {
-        $this -> render_optgroup($instrument);
+        $this -> render_optgroup($instrument, false);
     }
 
-    function render_optgroup($instrument) {
+    /**
+     * Injects the OptGroup JavaScript and initializes it with the annotated fields
+     * @param string $instrument 
+     * @param bool $is_survey 
+     * @return void 
+     */
+    function render_optgroup($instrument, $is_survey) {
 
-		// Collect project settings
-		$settings = $this->getProjectSettings();
-        
-		// Get all annotated fields
-        $tag = "@OPTGROUP";
-        $annotatedFields = $this->getTags($tag, $fields=NULL, $instruments=$instrument);
+        $annotatedFields = $this->getAnnotatedFields(self::OPTGROUP_AT, $instrument);
+        if (count($annotatedFields) == 0) return;
 
-        // Populate an array of annotated fields and their annotation parameters
-        if (!empty($annotatedFields[$tag]) && is_array($annotatedFields[$tag])) {
-            foreach (array_keys($annotatedFields[$tag]) as $fieldName) {
-                $optgroupFields[$fieldName] = explode(",", trim($annotatedFields[$tag][$fieldName][0], "'\""));
-            };
-        };
+        // Inject the JavaScript (inline for surveys)
+        if (!class_exists('INTERSECT\OptGroup\InjectionHelper')) require_once('classes/InjectionHelper.php');
+        $ih = InjectionHelper::init($this);
+        $ih->js("js/OptGroup.js", $is_survey);
+
+        // We need the JSMO for MLM integration
         $this->initializeJavascriptModuleObject();
-
-        ?>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                var optgroupMetadata = <?=json_encode($optgroupFields)?>;
-                if (!optgroupMetadata) return;
-                var JSMO = <?=$this->getJavascriptModuleObjectName()?>;
-                var mlmActive = JSMO.isMlmActive();
-                if (mlmActive) {
-                    JSMO.afterRender(function() {
-                        // Need to update optgroup label
-                        document.querySelectorAll("[mlm-optgroup-label]").forEach(function(option) {
-                            var optgroup = option.parentNode;
-                            optgroup.label = option.textContent.trim();
-                        });
-                    });
-                }
-                Object.keys(optgroupMetadata).forEach(function(fieldName) {
-                    var select = document.querySelector("select[name='" + fieldName + "']");
-                    if (!select) return; // Skip if no matching select found
-
-                    var groupValues = optgroupMetadata[fieldName];
-                    var options = Array.from(select.options);
-                    var fragment = document.createDocumentFragment();
-                    var currentOptGroup = null;
-                    var foundValues = new Set(options.map(option => option.value));
-                    var selectedValue = select.value;
-
-                    groupValues.forEach(function(groupValue) {
-                        if (!foundValues.has(groupValue)) {
-                            console.warn("Optgroup value '" + groupValue + "' for field '" + fieldName + "' is missing from dropdown choices.");
-                        }
-                    });
-                    if (select.classList.contains('rc-autocomplete')) {
-                        // When autocomplete is enabled, the action tag will break down. To preserve the intent, we simply remove all options marked as group labels
-                        options.forEach(function(option) {
-                            if (groupValues.includes(option.value)) {
-                                $(option).remove();
-                            }
-                        });
-                        return; // Done
-                    }
-                    options.forEach(function(option) {
-                        if (groupValues.includes(option.value)) {
-                            currentOptGroup = document.createElement("optgroup");
-                            currentOptGroup.setAttribute("choice", option.value);
-                            currentOptGroup.label = option.textContent.trim();
-                            if (mlmActive) {
-                                // Hide the original option but add it so that MLM can translate it, and add a marker
-                                option.style.display = "none";
-                                option.setAttribute("mlm-optgroup-label", "1");
-                                option.setAttribute("disabled", "disabled");
-                                currentOptGroup.appendChild(option);
-                            }
-                            fragment.appendChild(currentOptGroup);
-                            return;
-                        }
-                        (currentOptGroup || fragment).appendChild(option);
-                    });
-
-                    select.innerHTML = "";
-                    select.appendChild(fragment);
-                    // Restore selected value
-                    select.value = selectedValue;
-                });
-            });
-        </script>
-        <?php
+        $jsmo = $this->getJavascriptModuleObjectName();
+        $config = [
+            'fields' => $annotatedFields,
+            'JSMO' => null,
+            'debug' => $this->getProjectSetting('debug') == true,
+            'mlmActive' => false,
+            'isSurvey' => $is_survey,
+        ];
+        // Initialize the OptGroup
+        print \RCView::script("window.INTERSECT_OptGroupEM.init(" . json_encode($config) . ", $jsmo);");
     }
 }
