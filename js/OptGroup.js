@@ -53,6 +53,11 @@ function render() {
             render_dropdown(select, fieldName);
             return;
         }
+        var checkboxTestInput = document.querySelector("input[type='checkbox'][name='__chkn__" + fieldName + "']");
+        if (checkboxTestInput) {
+            render_checkbox(fieldName); // Call the new function for checkboxes
+            return;
+        }
         // TODO: Special attention needed for enhanced radios (surveys)
         var radioLabel = document.querySelector("label[data-mlm-field='" + fieldName + "'][data-mlm-type='enum']");
         if (radioLabel) {
@@ -140,5 +145,59 @@ function render_radio(fieldName) {
             }).removeClass('hover').addClass('optgroup-header').addClass('optgroup-enhradio');
         }
     }
+}
+
+/**
+ * Renders checkbox headers
+ * @param {string} fieldName 
+ */
+function render_checkbox(fieldName) {
+    const headerValues = config.fields[fieldName];
+
+    headerValues.forEach(function(headerValue) {
+        const checkboxInput = document.querySelector("input[type='checkbox'][name='__chkn__" + fieldName + "'][code='" + headerValue + "']");
+
+        if (checkboxInput) {
+            const span = document.createElement('span');
+
+            span.setAttribute("type", "checkbox");
+            if (checkboxInput.hasAttribute("aria-labelledby")) {
+                span.setAttribute("aria-labelledby", checkboxInput.getAttribute("aria-labelledby"));
+            }
+            span.setAttribute("tabindex", checkboxInput.getAttribute("tabindex") || "0");
+            span.id = checkboxInput.id;
+            span.setAttribute("name", checkboxInput.getAttribute("name"));
+            span.setAttribute("code", checkboxInput.getAttribute("code"));
+
+            if (checkboxInput.hasAttribute("onclick")) {
+                span.setAttribute("onclick", checkboxInput.getAttribute("onclick"));
+            }
+
+            checkboxInput.parentNode.replaceChild(span, checkboxInput);
+
+            const parentDiv = span.closest('div.choicevert');
+            if (parentDiv) {
+                parentDiv.style.pointerEvents = 'none';
+                parentDiv.style.cursor = 'default';
+                parentDiv.style.marginLeft = '0px';
+                parentDiv.style.textIndent = '0px';
+            }
+
+            const label = document.querySelector("label[for='" + span.id + "']");
+            if (label) {
+                label.classList.add('optgroup-header');
+                label.classList.add('optgroup-checkbox');
+            }
+
+            if (config.debug) {
+                console.log("OptGroupEM: Converted checkbox '" + headerValue + "' in field '" + fieldName + "' to span header.");
+            }
+
+        } else {
+            if (config.debug) {
+                console.warn("OptGroupEM: Checkbox input for header value '" + headerValue + "' in field '" + fieldName + "' not found.");
+            }
+        }
+    });
 }
 })();
