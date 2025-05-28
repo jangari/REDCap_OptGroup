@@ -68,3 +68,5 @@ Note that both classes need to be specified for the CSS to have enough specifici
 This module does not work for dropdowns where autocomplete is enabled due to the different DOM structure for dropdown fields in those cases. To prevent the inadvertent selection of choices that would otherwise have been converted to option groups, the option group choices are removed from the dropdown entirely.
 
 Perhaps a future version will implement support for autocomplete dropdowns.
+
+Enhanced checkboxes are also not currently supported.
