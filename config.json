@@ -2,7 +2,7 @@
     "name": "OptGroup",
         "namespace": "INTERSECT\\OptGroup",
 		"description": "Allows designers to build dropdown boxes with option groups; sections of choices, by annotating a dropdown field with <code>@OPTGROUP='x,y,z'</code>, where <code>x</code>, <code>y</code> and <code>z</code> represent choices whose labels become the group labels. Does not work for dropdowns where autocomplete is enabled.",
-		"framework-version": 14,
+		"framework-version": 16,
 		"authors": [
 			{
 				"name": "Aidan Wilson",
