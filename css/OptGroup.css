@@ -1,16 +1,9 @@
-.optgroup-header {
-  color: #6c757d;
-  font-weight: bold;
-  font-style: italic;
-  text-decoration: none;
-}
-
+/* OptGroup EM */
 .optgroup-enhanced-caption.optgroup-header {
     padding: 8px 0px;
     margin-bottom: 5px;
     display: block;
 }
-
 .optgroup-enhanced-group {
     margin-bottom: 15px;
     overflow: hidden;
