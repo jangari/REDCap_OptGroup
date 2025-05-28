@@ -57,6 +57,9 @@ class OptGroup extends \ExternalModules\AbstractExternalModule {
         $ih = InjectionHelper::init($this);
         $ih->js("js/OptGroup.js", $is_survey);
 
+        // Inject CSS
+        $ih->css("css/OptGroup.css");
+
         // We need the JSMO for MLM integration
         $this->initializeJavascriptModuleObject();
         $jsmo = $this->getJavascriptModuleObjectName();
